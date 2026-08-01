@@ -1,0 +1,11 @@
+*.exe
+Assembler
+
+*.pdf
+
+*.vvp
+*.vcd
+cpu_sim
+
+*.mem
+*.machine

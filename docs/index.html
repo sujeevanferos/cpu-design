@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Technical documentation of a custom 8-bit CPU design with cache hierarchy implemented in Verilog HDL.">
+  <title>8-Bit CPU Architecture and Cache Design Documentation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Design and Implementation of an 8-Bit Custom CPU Core with Cache Hierarchy</h1>
+      <div class="author-info">
+        <p>Author: F.R. Sujeevan (2nd Year Computer Engineering Student)</p>
+        <p>Department of Computer Engineering, University of Peradeniya</p>
+      </div>
+    </header>
+
+    <main>
+      <section id="introduction">
+        <h2>1. Introduction and Learning Objectives</h2>
+        <p>
+          During my second year of undergraduate studies in computer engineering, my primary goal was to bridge the gap between theoretical digital logic concepts and practical hardware design. While textbook diagrams introduce processors through simplified functional blocks, building a complete, working CPU core requires addressing real-world hardware details such as propagation delays, memory latency bottlenecks, gate-level arithmetic, and control signal generation.
+        </p>
+        <p>
+          To demonstrate a foundational understanding of computer organization, I designed and implemented an 8-bit custom central processing unit in Verilog HDL as part of my second-year curriculum. This project spans from the ground up, starting with modular sub-components like an Arithmetic Logic Unit and register file, progressing to a full instruction set architecture, and concluding with a multi-level cache subsystem containing an Instruction Cache and a Write-Back Data Cache.
+        </p>
+      </section>
+
+      <section id="isa">
+        <h2>2. Instruction Set Architecture Design</h2>
+        <p>
+          Selecting an appropriate Instruction Set Architecture was the first step in my design process. Although the data path processes 8-bit operands, I chose a 32-bit fixed-length instruction encoding. This decision simplified the instruction fetch and decode logic, allowing every instruction to be fetched cleanly without requiring variable-length multi-cycle instruction assemblies.
+        </p>
+        <p>
+          The 32-bit instruction word is partitioned into four distinct 8-bit fields:
+        </p>
+        <ol>
+          <li>Opcode Field (bits 31 to 24): Specifies the operation to be executed by the processor.</li>
+          <li>Destination / Immediate Field (bits 23 to 16): Identifies the target destination register (RD) or holds an 8-bit immediate value or branch target offset.</li>
+          <li>Source Register 1 Field (bits 15 to 8): Specifies the first source operand register (RT).</li>
+          <li>Source Register 2 / Immediate Field (bits 7 to 0): Specifies the second source operand register (RS) or an 8-bit immediate operand.</li>
+        </ol>
+
+        <h3>Instruction Set Summary</h3>
+        <p>
+          My instruction set comprises twelve core instructions that support data movement, arithmetic and logic computation, memory access, and branch/jump control.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Mnemonic</th>
+              <th>Opcode</th>
+              <th>Operands</th>
+              <th>Execution Logic</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>loadi</td>
+              <td>0x00</td>
+              <td>RD, IMM</td>
+              <td>Loads an 8-bit immediate value directly into register RD.</td>
+            </tr>
+            <tr>
+              <td>mov</td>
+              <td>0x01</td>
+              <td>RD, RT</td>
+              <td>Copies the contents of source register RT into destination register RD.</td>
+            </tr>
+            <tr>
+              <td>add</td>
+              <td>0x02</td>
+              <td>RD, RT, RS</td>
+              <td>Adds the contents of RT and RS, storing the result in RD.</td>
+            </tr>
+            <tr>
+              <td>sub</td>
+              <td>0x03</td>
+              <td>RD, RT, RS</td>
+              <td>Subtracts the contents of RS from RT using 2's complement logic.</td>
+            </tr>
+            <tr>
+              <td>and</td>
+              <td>0x04</td>
+              <td>RD, RT, RS</td>
+              <td>Performs a bitwise AND operation between RT and RS.</td>
+            </tr>
+            <tr>
+              <td>or</td>
+              <td>0x05</td>
+              <td>RD, RT, RS</td>
+              <td>Performs a bitwise OR operation between RT and RS.</td>
+            </tr>
+            <tr>
+              <td>j</td>
+              <td>0x06</td>
+              <td>TARGET</td>
+              <td>Unconditionally branches to a target address relative to PC.</td>
+            </tr>
+            <tr>
+              <td>beq</td>
+              <td>0x07</td>
+              <td>OFFSET, RT, RS</td>
+              <td>Branches to a PC-relative target address if RT equals RS.</td>
+            </tr>
+            <tr>
+              <td>lwd</td>
+              <td>0x08</td>
+              <td>RD, RT</td>
+              <td>Loads a byte from data memory at the address stored in register RT.</td>
+            </tr>
+            <tr>
+              <td>lwi</td>
+              <td>0x09</td>
+              <td>RD, IMM</td>
+              <td>Loads a byte from data memory at an immediate address location.</td>
+            </tr>
+            <tr>
+              <td>swd</td>
+              <td>0x0A</td>
+              <td>RT, RS</td>
+              <td>Stores the byte in RT into data memory at the address stored in RS.</td>
+            </tr>
+            <tr>
+              <td>swi</td>
+              <td>0x0B</td>
+              <td>RT, IMM</td>
+              <td>Stores the byte in RT into data memory at an immediate address location.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="datapath">
+        <h2>3. Low-Level Datapath Engineering</h2>
+
+        <h3>Register File Design</h3>
+        <p>
+          In <code>reg.v</code>, I implemented an 8-by-8-bit register file providing eight general-purpose registers (r0 through r7). The register array features two asynchronous read ports, allowing simultaneous reading of REGOUT1 and REGOUT2 with an artificial propagation delay of 2 time units. Register writes are synchronous and occur on the rising edge of the clock signal when the write enable line is high, subject to a 1 time unit write delay. A master reset signal clears all register contents to zero upon system initialization.
+        </p>
+
+        <h3>Modular Arithmetic Logic Unit</h3>
+        <p>
+          Rather than relying on a single monolithic block, I structured the ALU in <code>alu.v</code> using individual sub-modules to model hardware propagation delays accurately:
+        </p>
+        <ul>
+          <li>Forward Unit: Modeled with a 1 time unit delay to pass immediate or register values directly to output.</li>
+          <li>Add Unit: Modeled with a 2 time unit delay to perform binary addition.</li>
+          <li>AND Unit: Modeled with a 1 time unit delay to perform bitwise logic AND.</li>
+          <li>OR Unit: Modeled with a 1 time unit delay to perform bitwise logic OR.</li>
+        </ul>
+
+        <h3>Subtraction and Zero Flag Generation</h3>
+        <p>
+          To implement subtraction without extra adder hardware, I constructed a 2's complement logic block. The second register operand is inverted and incremented by one (~REGOUT2 + 1) with a propagation delay of 1 time unit. The result is then routed into the addition sub-module.
+        </p>
+        <p>
+          I also incorporated a Zero Flag circuit that evaluates the output of the ALU. When an ALU computation yields zero, the zero signal is asserted. This signal plays a crucial role in conditional branch evaluation, enabling branch execution when comparing two registers for equality in the beq instruction.
+        </p>
+
+        <h3>Control Unit and Signal Routing</h3>
+        <p>
+          The central control unit in <code>cpu.v</code> inspects the incoming opcode asynchronously. Upon decoding, it asserts appropriate control signals: setting write enable for register updates, configuring ALU operation select lines, driving immediate selection multiplexers, toggling memory read/write requests, and resolving target branch addresses.
+        </p>
+      </section>
+
+      <section id="memory-cache">
+        <h2>4. Memory and Cache Hierarchy</h2>
+        <p>
+          A critical phase of my design involved modeling realistic memory delays. Main memory access is inherently slower than register operations. In my simulation, main memory accesses require 40 time units per block access. To prevent severe performance degradation, I designed separate instruction and data cache memories.
+        </p>
+
+        <h3>Instruction Cache Subsystem</h3>
+        <p>
+          The instruction cache module in <code>icache.v</code> is a direct-mapped cache with a capacity of 128 Bytes organized into 8 cache lines, where each line stores a 16-Byte data block (equivalent to 4 32-bit instructions).
+        </p>
+        <p>
+          The 10-bit instruction address received from the Program Counter is divided into three fields:
+        </p>
+        <ol>
+          <li>Tag Field (bits 9 to 7): 3 bits used to verify cache line ownership.</li>
+          <li>Index Field (bits 6 to 4): 3 bits used to select one of the 8 cache lines.</li>
+          <li>Offset Field (bits 3 to 0): 4 bits used to select the specific byte or word within the 16-Byte block.</li>
+        </ol>
+        <p>
+          When an instruction is requested, the cache checks if the line is valid and matches the requested tag. A hit allows instant instruction delivery. On a miss, the cache finite state machine stalls the CPU core by asserting a busywait signal and issues a 16-Byte block read to the main instruction memory, incurring an 81-cycle miss penalty before resuming instruction execution.
+        </p>
+
+        <h3>Data Cache Subsystem</h3>
+        <p>
+          The data cache module in <code>dcache.v</code> is a 32-Byte direct-mapped cache structured into 8 lines of 4 Bytes each. It operates on a Write-Back policy with Dirty Bit tracking and a Write-Allocate strategy on write misses.
+        </p>
+        <p>
+          The 8-bit memory address is mapped into Tag (bits 7 to 5), Index (bits 4 to 2), and Offset (bits 1 to 0). On a read or write access:
+        </p>
+        <ul>
+          <li>Read Hit: The requested byte is extracted from the cached 4-Byte block and returned in 1 cycle.</li>
+          <li>Write Hit: The target byte within the cache line is modified directly, and the dirty bit for that line is set to indicate uncommitted memory state.</li>
+          <li>Miss with Clean Line: The cache fetches the required 4-Byte block from data memory into the cache line.</li>
+          <li>Miss with Dirty Line: The finite state machine first evicts the dirty block by writing it back to data memory, then reads the required block from memory into the cache line.</li>
+        </ul>
+      </section>
+
+      <section id="stalls">
+        <h2>5. Pipeline Stall Mechanics</h2>
+        <p>
+          To maintain correctness during memory transactions, I engineered a unified stall signal:
+        </p>
+        <pre><code>assign BUSYWAIT = DCACHE_BUSYWAIT || ICACHE_BUSYWAIT;</code></pre>
+        <p>
+          Whenever either cache experiences a miss, BUSYWAIT goes high. In the CPU control logic, an active stall signal immediately freezes the Program Counter (PC &lt;= PC) and forces the register file write enable to zero. This prevents partial state updates, instruction execution corruption, or invalid memory writes while waiting for cache line fills.
+        </p>
+      </section>
+
+      <section id="toolchain">
+        <h2>6. Custom Software Toolchain</h2>
+        <p>
+          To test my processor design with custom software programs, I developed a complete toolchain:
+        </p>
+        <ol>
+          <li>Assembler Program (<code>Assembler.c</code>): Written in C, this tool parses custom assembly mnemonics, validates instruction format tokens, converts immediate values and registers into binary strings, and emits a 32-bit machine code text file.</li>
+          <li>Memory Formatting Script (<code>generate_memory_image.sh</code>): A bash script that takes the machine code text file, formats the 32-bit words into 4-byte space-separated hex/binary blocks, and outputs a formatted file (<code>instr_mem.mem</code>) ready for Verilog <code>$readmemb</code> initialization.</li>
+        </ol>
+      </section>
+
+      <section id="simulation">
+        <h2>7. Verification and Simulation Results</h2>
+        <p>
+          I validated the processor by writing a test assembly program in <code>program.s</code> to calculate the Fibonacci sequence from F(0) to F(8) and store the results (0, 1, 1, 2, 3, 5, 8, 13, 21) into data memory addresses 0x00 through 0x08.
+        </p>
+        <p>
+          The simulation was executed using Icarus Verilog, and signal timing waveforms were inspected in GTKWave using <code>cpu_tb.v</code>. The waveform output confirmed proper instruction decoding, correct branch evaluation during loop iterations, cache miss stalls during initial line fills, and final write-back storage of calculated Fibonacci numbers in memory.
+        </p>
+      </section>
+
+      <section id="conclusion">
+        <h2>8. Key Reflections</h2>
+        <p>
+          Building this processor during my second year of computer engineering provided invaluable insight into hardware design trade-offs. I gained first-hand experience in managing timing delays, understanding how cache line granularity affects miss penalties, and designing control logic to prevent race conditions during memory stalls. This project successfully demonstrates the essential principles of computer organization and hardware design.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p>8-Bit CPU Architecture Documentation &copy; F.R. Sujeevan | 2nd Year Computer Engineering | Department of Computer Engineering, University of Peradeniya</p>
+    </footer>
+  </div>
+</body>
+</html>
