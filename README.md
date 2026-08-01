@@ -172,4 +172,4 @@ j 0xFF              // Infinite loop / Halt
 ## Author
 
 F.R. Sujeevan  
-Second-Year Computer Engineering Undergraduate, Department of Computer Engineering, University of Peradeniya.
+Computer Engineering Undergraduate, Department of Computer Engineering, University of Peradeniya.
