@@ -1,16 +1,21 @@
 # 8-Bit Custom CPU Architecture with Cache Hierarchy
 
-A custom-designed 8-bit CPU core implemented in Verilog HDL featuring a 32-bit fixed-length Instruction Set Architecture (ISA), modular Arithmetic Logic Unit (ALU), multi-level Memory & Cache Hierarchy (Instruction Cache & Write-Back Data Cache), stall-based pipeline flow control, and a dedicated C-based assembler toolchain.
+A custom-designed 8-bit CPU core implemented in Verilog HDL featuring a 32-bit fixed-length Instruction Set Architecture (ISA) inspired by the MIPS architecture, a modular Arithmetic Logic Unit (ALU), a multi-level Memory & Cache Hierarchy (Instruction Cache & Write-Back Data Cache), stall-based pipeline flow control, and a dedicated C-based assembler toolchain.
 
 ---
 
 ## Architectural Overview
 
-This processor design was developed during my second year of computer engineering studies to demonstrate fundamental computer organization principles, ranging from gate-level timing modeling up to high-level memory hierarchy management.
+This processor design was developed by F.R. Sujeevan during his second year of computer engineering studies to demonstrate fundamental computer organization principles, ranging from gate-level timing modeling up to high-level memory hierarchy management.
+
+The core architecture design and ISA are inspired by the MIPS RISC architecture as presented in the textbook:
+* *Computer Organization and Design: The Hardware/Software Interface, Sixth Edition*, by David A. Patterson and John L. Hennessy.
+
+While foundational memory primitive modules and utility scripts were provided as course resources, all processor architecture logic, instruction decoding, register file operations, ALU functions, 2's complement logic, and cache hierarchy subsystems were designed and implemented independently by F.R. Sujeevan.
 
 ### Specifications
 * Data Width: 8-bit data paths and registers.
-* Instruction Width: 32-bit fixed-length instruction encoding.
+* Instruction Width: 32-bit fixed-length instruction encoding (MIPS-style fixed format).
 * Register File: 8 general-purpose 8-bit registers (r0 through r7).
 * Addressing: 32-bit Program Counter (PC), byte-addressable instruction and data spaces.
 * Instruction Cache: 128 Bytes, Direct-Mapped, 16-Byte block size, read-only.
@@ -140,27 +145,31 @@ j 0xFF              // Infinite loop / Halt
 
 ---
 
-## Repository Structure
+## Repository Structure & Author Credits
 
-```
-.
-├── cpu.v                    # Top-level CPU Core & Control Unit
-├── alu.v                    # Modular ALU & 2's Complement Unit
-├── reg.v                    # 8x8-bit Register File
-├── icache.v                 # 128-Byte Direct-Mapped Instruction Cache
-├── dcache.v                 # 32-Byte Write-Back Data Cache
-├── instruction_memory.v     # 1024-Byte Main Instruction Memory
-├── dmem_for_dcache.v        # 256-Byte Main Data Memory
-├── cpu_tb.v                 # Testbench & Simulation Driver
-├── Assembler.c              # C-based 32-bit ISA Assembler
-├── generate_memory_image.sh # Script converting machine code to Verilog .mem
-├── program.s                # Sample Assembly Program (Fibonacci)
-└── README.md                # Project Documentation
-```
+| File / Component | Author | Role / Description |
+| :--- | :--- | :--- |
+| `cpu.v` | F.R. Sujeevan | Top-level CPU core, control unit, and branch/jump logic |
+| `alu.v` | F.R. Sujeevan | Modular ALU, sub-units, 2's complement, and zero flag |
+| `reg.v` | F.R. Sujeevan | 8x8-bit register file with asynchronous reads |
+| `icache.v` | F.R. Sujeevan | 128-Byte direct-mapped instruction cache & miss FSM |
+| `dcache.v` | F.R. Sujeevan | 32-Byte direct-mapped write-back data cache |
+| `cpu_tb.v` | F.R. Sujeevan | Simulation testbench driver |
+| `instruction_memory.v` | Isuru Nawinne | 1024-Byte instruction memory module (CO2070 course module) |
+| `dmem_for_dcache.v` | Isuru Nawinne | 256-Byte data memory module (CO2070 course module) |
+| `Assembler.c` | Isuru Nawinne | C-based ISA assembler tool (CO2070 course tool) |
+| `generate_memory_image.sh` | Kisaru Liyanage | Memory formatting script for Verilog $readmemb |
+
+---
+
+## Acknowledgments and References
+
+* Reference Textbook: *Computer Organization and Design: The Hardware/Software Interface, Sixth Edition*, by David A. Patterson and John L. Hennessy.
+* Course Context: CO2070 Computer Architecture laboratory series, Department of Computer Engineering, University of Peradeniya.
 
 ---
 
 ## Author
 
-F.R. Sujeevan
+F.R. Sujeevan  
 Second-Year Computer Engineering Undergraduate, Department of Computer Engineering, University of Peradeniya.

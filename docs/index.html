@@ -24,14 +24,17 @@
           During my second year of undergraduate studies in computer engineering, my primary goal was to bridge the gap between theoretical digital logic concepts and practical hardware design. While textbook diagrams introduce processors through simplified functional blocks, building a complete, working CPU core requires addressing real-world hardware details such as propagation delays, memory latency bottlenecks, gate-level arithmetic, and control signal generation.
         </p>
         <p>
-          To demonstrate a foundational understanding of computer organization, I designed and implemented an 8-bit custom central processing unit in Verilog HDL as part of my second-year curriculum. This project spans from the ground up, starting with modular sub-components like an Arithmetic Logic Unit and register file, progressing to a full instruction set architecture, and concluding with a multi-level cache subsystem containing an Instruction Cache and a Write-Back Data Cache.
+          The architecture and instruction set of this processor are inspired by the MIPS RISC architecture as presented in the textbook <em>Computer Organization and Design: The Hardware/Software Interface, Sixth Edition</em>, by David A. Patterson and John L. Hennessy. Guided by these principles, I designed and implemented an 8-bit custom central processing unit in Verilog HDL.
+        </p>
+        <p>
+          While foundational memory primitive modules and utility tools were provided as course starter resources, all core processor architecture logic, instruction decoding, register file operations, ALU functions, 2's complement logic, and cache hierarchy subsystems were designed and implemented independently by me.
         </p>
       </section>
 
       <section id="isa">
         <h2>2. Instruction Set Architecture Design</h2>
         <p>
-          Selecting an appropriate Instruction Set Architecture was the first step in my design process. Although the data path processes 8-bit operands, I chose a 32-bit fixed-length instruction encoding. This decision simplified the instruction fetch and decode logic, allowing every instruction to be fetched cleanly without requiring variable-length multi-cycle instruction assemblies.
+          Selecting an appropriate Instruction Set Architecture was the first step in my design process. Inspired by MIPS fixed-length instruction encoding, I chose a 32-bit fixed-length instruction format for my 8-bit data path. This decision simplified instruction fetch and decode logic, allowing every instruction to be fetched cleanly without requiring variable-length multi-cycle instruction assemblies.
         </p>
         <p>
           The 32-bit instruction word is partitioned into four distinct 8-bit fields:
@@ -215,14 +218,17 @@
       </section>
 
       <section id="toolchain">
-        <h2>6. Custom Software Toolchain</h2>
+        <h2>6. Software Toolchain and Module Contributions</h2>
         <p>
-          To test my processor design with custom software programs, I developed a complete toolchain:
+          To compile and execute programs on my CPU architecture, a software assembly toolchain is used:
         </p>
         <ol>
-          <li>Assembler Program (<code>Assembler.c</code>): Written in C, this tool parses custom assembly mnemonics, validates instruction format tokens, converts immediate values and registers into binary strings, and emits a 32-bit machine code text file.</li>
-          <li>Memory Formatting Script (<code>generate_memory_image.sh</code>): A bash script that takes the machine code text file, formats the 32-bit words into 4-byte space-separated hex/binary blocks, and outputs a formatted file (<code>instr_mem.mem</code>) ready for Verilog <code>$readmemb</code> initialization.</li>
+          <li>Assembler Program (<code>Assembler.c</code>): Authored by Isuru Nawinne for the CO2070 laboratory course, this C program translates assembly source code into 32-bit machine code text files.</li>
+          <li>Memory Formatting Script (<code>generate_memory_image.sh</code>): Authored by Kisaru Liyanage, this shell script converts 32-bit machine code into Verilog <code>$readmemb</code> memory array input files (<code>instr_mem.mem</code>).</li>
         </ol>
+        <p>
+          The main instruction memory (<code>instruction_memory.v</code>) and data memory (<code>dmem_for_dcache.v</code>) modules were provided by course instructor Isuru Nawinne as underlying physical storage primitives. All core processor logic—including the top-level CPU datapath (<code>cpu.v</code>), modular ALU (<code>alu.v</code>), register file (<code>reg.v</code>), instruction cache (<code>icache.v</code>), data cache (<code>dcache.v</code>), and simulation testbench (<code>cpu_tb.v</code>)—were authored and designed by me.
+        </p>
       </section>
 
       <section id="simulation">
@@ -235,10 +241,78 @@
         </p>
       </section>
 
+      <section id="credits">
+        <h2>8. Module Authorship and Credits Summary</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>File / Component</th>
+              <th>Author</th>
+              <th>Role in Project</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>cpu.v</td>
+              <td>F.R. Sujeevan</td>
+              <td>Top-level CPU core, control unit, and branch/jump logic.</td>
+            </tr>
+            <tr>
+              <td>alu.v</td>
+              <td>F.R. Sujeevan</td>
+              <td>Modular ALU, sub-units, 2's complement logic, and zero flag.</td>
+            </tr>
+            <tr>
+              <td>reg.v</td>
+              <td>F.R. Sujeevan</td>
+              <td>8x8-bit register file with asynchronous reads and synchronous writes.</td>
+            </tr>
+            <tr>
+              <td>icache.v</td>
+              <td>F.R. Sujeevan</td>
+              <td>128-Byte direct-mapped instruction cache & miss FSM.</td>
+            </tr>
+            <tr>
+              <td>dcache.v</td>
+              <td>F.R. Sujeevan</td>
+              <td>32-Byte direct-mapped write-back data cache & dirty eviction FSM.</td>
+            </tr>
+            <tr>
+              <td>cpu_tb.v</td>
+              <td>F.R. Sujeevan</td>
+              <td>Simulation testbench and waveform driver.</td>
+            </tr>
+            <tr>
+              <td>instruction_memory.v</td>
+              <td>Isuru Nawinne</td>
+              <td>1024-Byte main instruction memory primitive (CO2070 course module).</td>
+            </tr>
+            <tr>
+              <td>dmem_for_dcache.v</td>
+              <td>Isuru Nawinne</td>
+              <td>256-Byte main data memory primitive (CO2070 course module).</td>
+            </tr>
+            <tr>
+              <td>Assembler.c</td>
+              <td>Isuru Nawinne</td>
+              <td>C-based ISA assembler tool (CO2070 course tool).</td>
+            </tr>
+            <tr>
+              <td>generate_memory_image.sh</td>
+              <td>Kisaru Liyanage</td>
+              <td>Memory formatting script for Verilog $readmemb array loading.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
       <section id="conclusion">
-        <h2>8. Key Reflections</h2>
+        <h2>9. Key Reflections and References</h2>
         <p>
-          Building this processor during my second year of computer engineering provided invaluable insight into hardware design trade-offs. I gained first-hand experience in managing timing delays, understanding how cache line granularity affects miss penalties, and designing control logic to prevent race conditions during memory stalls. This project successfully demonstrates the essential principles of computer organization and hardware design.
+          Building this processor during my second year of computer engineering provided invaluable insight into hardware design trade-offs. I gained first-hand experience in managing timing delays, understanding how cache line granularity affects miss penalties, and designing control logic to prevent race conditions during memory stalls.
+        </p>
+        <p>
+          Reference Textbook: <em>Computer Organization and Design: The Hardware/Software Interface, Sixth Edition</em>, by David A. Patterson and John L. Hennessy.
         </p>
       </section>
     </main>
